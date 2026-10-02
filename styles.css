@@ -1,0 +1,388 @@
+/* ==========================================================
+   主题变量
+   ========================================================== */
+:root {
+  --color-text: #e0e0e0;
+  --color-text-dim: #8a9299;
+  --color-infinity: #ff9800;
+  --color-base: #455a64;
+
+  --var-border-width: 0.2rem;
+  --var-border-radius: 0.5rem;
+
+  --accent: #ffff00;      /* 由 JS 动态改 */
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  font-size: 62.5%;
+  scrollbar-color: grey transparent;
+}
+
+::-webkit-scrollbar { width: 1rem; }
+::-webkit-scrollbar-thumb {
+  background-color: grey;
+  border: 0.2rem solid transparent;
+  background-clip: content-box;
+  border-radius: var(--var-border-radius);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  text-align: center;
+  font-family: Typewriter, "Courier New", ui-monospace, monospace;
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: black;
+}
+
+/* ==========================================================
+   Cursed 背景
+   ========================================================== */
+.c-cursed-background-overlay {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -2;
+  background: radial-gradient(
+    #ffff00, #ffc000, #ff8000, #ff4000, #ff0000, #c00000, #800000, #400000,
+    black, black, black, black, black, black, black, black
+  );
+  background-size: 1200% 400%;
+  animation: a-cursed-background-shift 240s linear infinite;
+}
+
+@keyframes a-cursed-background-shift {
+  0%   { background-position: 50% 0%; }
+  50%  { background-position: 50% 30%; }
+  100% { background-position: 50% 0%; }
+}
+
+/* ==========================================================
+   主容器
+   ========================================================== */
+#ui {
+  display: flex;
+  justify-content: center;
+  min-height: 100%;
+}
+
+.c-hunt {
+  width: 72rem;
+  max-width: 100%;
+  padding: 6rem 2rem 4rem;
+}
+
+/* ---------- 顶部数值 ---------- */
+.c-hunt__header {
+  margin-bottom: 3rem;
+}
+
+.c-hunt__amount {
+  display: inline-block;
+  font-size: 5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  text-shadow: 0 0 1.5rem var(--accent), 0 0 3rem rgba(0, 0, 0, 0.6);
+  transition: color 0.4s, text-shadow 0.4s;
+}
+
+.c-hunt__amount.bump {
+  animation: a-bump 0.35s ease-out;
+}
+
+@keyframes a-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- 状态句 ---------- */
+.c-hunt__status {
+  max-width: 68rem;
+  margin: 0 auto 3rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1.8;
+  color: red;
+  text-shadow: 0 0 0.6rem black, 0 0 0.6rem black;
+}
+
+.c-hunt__status b {
+  color: #fff;
+  text-shadow: 0 0 0.8rem currentColor;
+}
+
+/* ---------- 主按钮 ---------- */
+.o-hunt-btn {
+  min-width: 20rem;
+  height: 4rem;
+  padding: 0 2rem;
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  background: black;
+  border: var(--var-border-width) solid var(--color-text);
+  border-radius: var(--var-border-radius);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.o-hunt-btn:hover:not(:disabled) {
+  color: black;
+  background: var(--color-text);
+}
+
+.o-hunt-btn:disabled {
+  color: #777;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+.o-hunt-btn--small {
+  min-width: 10rem;
+  height: 3.4rem;
+  font-size: 1.2rem;
+}
+
+/* ---------- 排行榜 ---------- */
+.c-board {
+  width: 60rem;
+  max-width: 100%;
+  margin: 5rem auto 0;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.55);
+  border: var(--var-border-width) solid #333;
+  border-radius: var(--var-border-radius);
+  text-align: left;
+  backdrop-filter: blur(2px);
+}
+
+/* 替换原来的 .c-board__title */
+.c-board__title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  position: relative;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.8rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  color: var(--color-infinity);
+  border-bottom: 0.1rem solid #333;
+}
+
+/* 刷新按钮：绝对定位到右侧，不影响标题居中 */
+.c-board__refresh {
+  position: absolute;
+  right: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: var(--color-infinity);
+  background: transparent;
+  border: 0.1rem solid transparent;
+  border-radius: var(--var-border-radius);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.c-board__refresh:hover {
+  color: black;
+  background: var(--color-infinity);
+  border-color: var(--color-infinity);
+}
+
+/* 加载中旋转 */
+.c-board__refresh.spinning {
+  animation: a-spin 0.8s linear infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@keyframes a-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.c-board__list {
+  max-height: 32rem;
+  overflow-y: auto;
+  margin: 0 0 1.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.c-board__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0.4rem;
+  font-size: 1.3rem;
+  border-bottom: 0.1rem solid rgba(255, 255, 255, 0.06);
+}
+
+.c-board__list li:last-child { border-bottom: none; }
+
+.c-board__empty {
+  justify-content: center;
+  color: var(--color-text-dim);
+  font-weight: normal;
+}
+
+.c-board .rank {
+  min-width: 3.5rem;
+  color: #6a757c;
+}
+
+.c-board .name {
+  flex: 1;
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+.c-board .meta {
+  font-size: 1.1rem;
+  font-weight: normal;
+  color: var(--color-text-dim);
+}
+
+.c-board .score {
+  min-width: 4rem;
+  text-align: right;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s;
+}
+
+.c-board__submit {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.c-board__submit input {
+  flex: 1;
+  max-width: 24rem;
+  height: 3.4rem;
+  padding: 0 1rem;
+  font-family: inherit;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  background: black;
+  border: var(--var-border-width) solid #333;
+  border-radius: var(--var-border-radius);
+  outline: none;
+}
+
+.c-board__submit input::placeholder { color: #555; }
+
+.c-board__submit input:focus {
+  border-color: var(--color-infinity);
+}
+
+/* ==========================================================
+   账号条
+   ========================================================== */
+.c-authbar {
+  width: 60rem;
+  max-width: 100%;
+  margin: 0 auto 3rem;
+  padding: 1.2rem 1.6rem;
+  background: rgba(0, 0, 0, 0.6);
+  border: 0.1rem solid #333;
+  border-radius: var(--var-border-radius);
+  backdrop-filter: blur(2px);
+}
+
+.c-authbar__user {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.c-authbar__email {
+  overflow: hidden;
+  font-size: 1.2rem;
+  font-weight: normal;
+  color: var(--color-text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c-authbar__form {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.c-authbar__form input {
+  flex: 1;
+  min-width: 0;
+  height: 3.2rem;
+  padding: 0 1rem;
+  font-family: inherit;
+  font-size: 1.2rem;
+  color: var(--color-text);
+  background: black;
+  border: 0.1rem solid #333;
+  border-radius: var(--var-border-radius);
+  outline: none;
+}
+
+.c-authbar__form input:focus {
+  border-color: var(--color-infinity);
+}
+
+.c-authbar__form input::placeholder { color: #555; }
+
+/* 小号按钮 */
+.o-hunt-btn--tiny {
+  min-width: 6rem;
+  height: 3.2rem;
+  padding: 0 1.2rem;
+  font-size: 1.2rem;
+  letter-spacing: 0;
+}
+
+.o-hunt-btn--ghost {
+  color: var(--color-text-dim);
+  border-color: #555;
+}
+
+.o-hunt-btn--ghost:hover:not(:disabled) {
+  color: black;
+  background: var(--color-text-dim);
+}
+
+/* 排行榜里区分"自己" */
+.c-board__list li.is-me {
+  background: rgba(255, 152, 0, 0.12);
+  border-radius: var(--var-border-radius);
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slabdrill 模拟器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="c-cursed-background-overlay"></div>
+
+  <div id="ui">
+    <div class="c-hunt">
+
+      <!-- ============ 账号条 ============ -->
+      <div class="c-authbar" id="authBar">
+        <!-- 已登录视图 -->
+        <div class="c-authbar__user" id="authUserView" hidden>
+          <span class="c-authbar__email" id="authEmail"></span>
+          <button class="o-hunt-btn o-hunt-btn--tiny" id="logoutBtn">退出</button>
+        </div>
+
+        <!-- 未登录视图 -->
+        <form class="c-authbar__form" id="authForm">
+        <input type="text" id="usernameInput" placeholder="用户名 (≥3位)" minlength="3" maxlength="16" required>
+        <input type="password" id="passwordInput" placeholder="密码 (≥6位)" minlength="6" required>
+        <button type="submit" class="o-hunt-btn o-hunt-btn--tiny" id="loginBtn">登录</button>
+        <button type="button" class="o-hunt-btn o-hunt-btn--tiny o-hunt-btn--ghost" id="signupBtn">注册</button>
+      </form>
+      </div>
+
+      <!-- ============ 主数值 ============ -->
+      <div class="c-hunt__header">
+        <span class="c-hunt__amount" id="resourceValue">0</span>
+      </div>
+
+      <!-- ============ 状态句 ============ -->
+      <p class="c-hunt__status" id="statusLine"></p>
+
+      <!-- ============ 抽卡按钮 ============ -->
+      <button class="o-hunt-btn" id="huntBtn">Hunt</button>
+
+      <!-- ============ 排行榜 ============ -->
+      <div class="c-board">
+      <div class="c-board__title">
+        <span>排行榜</span>
+        <button class="c-board__refresh" id="refreshBtn" title="刷新">⟳</button>
+      </div>
+      <ol class="c-board__list" id="leaderboardList">
+        <li class="c-board__empty">加载中…</li>
+      </ol>
+    </div>
+
+    </div>
+  </div>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>
