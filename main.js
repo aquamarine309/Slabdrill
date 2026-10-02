@@ -145,6 +145,7 @@ function hunt() {
     scheduleSync();
   } else {
     stats.sinceLastHit++;
+    scheduleSync(3000);
   }
 
   stats.draws++;
@@ -244,9 +245,9 @@ async function handleLogout() {
 }
 
 /* ========================= 存档同步（一对一 upsert） ========================= */
-function scheduleSync() {
+function scheduleSync(delay = 800) {
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(syncProfile, 800);
+  syncTimer = setTimeout(syncProfile, delay);
 }
 
 async function syncProfile() {
