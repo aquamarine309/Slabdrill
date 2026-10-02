@@ -7,16 +7,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const RESOURCE_NAME    = "混沌核心";
 const HUNT_INTERVAL_MS = 1000;              // 0 = 无冷却
 
-// 概率函数：0~1
-// stats = { resource, draws, hits, sinceLastHit }
-function getChance(stats) {
-  return Math.pow(10, -0.2 * stats.resource - 1);
-}
-
-// 奖励函数：非负整数
-function getReward(stats) {
-  return 1;
-}
 
 /* ====================================================================
  *   ↑↑↑  改完就不用动下面了  ↑↑↑
@@ -33,7 +23,7 @@ const USERNAME_DOMAIN = '@example.com';
 const toEmail = (name) => name.trim().toLowerCase() + USERNAME_DOMAIN;
 
 // 只允许：字母、数字、下划线、中文
-const USERNAME_RE = /^[a-zA-Z0-9_\u4e00-\u9fa5]{3,16}$/;
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,16}$/;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -48,6 +38,7 @@ const stats = {
 
 let currentUser = null;
 let syncTimer = 0;
+let lastChance = 0.01;
 
 /* ========================= DOM ========================= */
 const $ = (id) => document.getElementById(id);
@@ -102,11 +93,12 @@ function updateHUD() {
   const color = tierColor(stats.resource);
   document.documentElement.style.setProperty('--accent', color);
 
-  const chance = Math.max(0, Math.min(1, getChance(stats)));
   statusLineEl.innerHTML =
     `你当前有 <b>${stats.resource} ${RESOURCE_NAME}</b>。` +
-    `每次猎取有 <b>${fmtChance(chance)}%</b> 的概率找到一个。` +
-    (HUNT_INTERVAL_MS > 0 ? `每 <b>${fmtDuration(HUNT_INTERVAL_MS)}</b> 可猎取一次。` : '');
+    `每次猎取有 <b>${fmtChance(lastChance)}%</b> 的概率找到一个。` +
+    (HUNT_INTERVAL_MS > 0
+      ? ` 每 <b>${fmtDuration(HUNT_INTERVAL_MS)}</b> 可猎取一次。`
+      : '');
 }
 
 function bumpNumber() {
@@ -130,29 +122,47 @@ function tick() {
 }
 
 /* ========================= 核心：一次猎取 ========================= */
-function hunt() {
+async function hunt() {
   const now = Date.now();
   if (now - stats.lastHunt < HUNT_INTERVAL_MS) return;
-
   stats.lastHunt = now;
-
-  const chance = Math.max(0, Math.min(1, getChance(stats)));
-  if (Math.random() < chance) {
-    stats.resource += Math.max(0, Math.floor(getReward(stats)));
-    stats.hits++;
-    stats.sinceLastHit = 0;
-    bumpNumber();
-    scheduleSync();
-  } else {
-    stats.sinceLastHit++;
-    scheduleSync(3000);
-  }
-
-  stats.draws++;
-  updateHUD();
   tick();
-}
 
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { alert('请先登录'); return; }
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/hunt`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (res.status === 429) {
+      const { waitMs } = await res.json();
+      stats.lastHunt = Date.now() - HUNT_INTERVAL_MS + waitMs;
+      tick();
+      return;
+    }
+    if (!res.ok) throw new Error(await res.text());
+
+    const data = await res.json();
+    stats.resource     = data.resource;
+    stats.draws        = data.draws;
+    stats.sinceLastHit = data.sinceLastHit;
+    lastChance         = data.chance;
+    if (data.hit) bumpNumber();
+
+    updateHUD();
+  } catch (e) {
+    console.error('猎取失败:', e);
+  }
+}
 /* ========================= 账号 UI ========================= */
 function renderAuthUI() {
   if (currentUser) {
@@ -173,7 +183,7 @@ function checkInputs() {
   const password = passwordInput.value;
 
   if (!USERNAME_RE.test(name)) {
-    alert('用户名 3~16 位，只支持字母 / 数字 / 下划线 / 中文');
+    alert('用户名 3~16 位，只支持字母 / 数字 / 下划线');
     return null;
   }
   if (password.length < 6) {
@@ -272,37 +282,47 @@ async function syncProfile() {
 
 async function loadProfile() {
   if (!currentUser) {
-    stats.resource = 0;
-    stats.draws = 0;
-    stats.hits = 0;
-    stats.sinceLastHit = 0;
-    stats.lastHunt = 0;
-    updateHUD();
-    tick();
+    stats.resource = stats.draws = stats.hits = 0;
+    stats.sinceLastHit = stats.lastHunt = 0;
+    lastChance = 0;
+    updateHUD(); tick();
     return;
   }
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('chaos_cores, total_hunts')
-    .eq('id', currentUser.id)
-    .maybeSingle();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
 
-  if (error) {
-    console.error('读取存档失败:', error);
-    return;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/hunt`,   // 同一个 URL，GET
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      }
+    );
+    if (!res.ok) throw new Error(await res.text());
+
+    const data = await res.json();
+    stats.resource     = data.resource;
+    stats.draws        = data.draws;
+    stats.sinceLastHit = data.sinceLastHit;
+    stats.hits         = 0;
+    lastChance         = data.chance;
+
+    // 若还在冷却，纠正本地 lastHunt 让按钮正确显示倒计时
+    if (data.cooldownRemainingMs > 0) {
+      stats.lastHunt = Date.now() - HUNT_INTERVAL_MS + data.cooldownRemainingMs;
+    } else {
+      stats.lastHunt = 0;
+    }
+
+    updateHUD(); tick();
+  } catch (e) {
+    console.error('加载存档失败:', e);
   }
-
-  stats.resource     = data?.chaos_cores ?? 0;
-  stats.draws        = data?.total_hunts ?? 0;
-  stats.hits         = 0;
-  stats.sinceLastHit = 0;
-  stats.lastHunt     = 0;
-
-  updateHUD();
-  tick();
 }
-
 /* ========================= 排行榜 ========================= */
 let lastRows = [];
 
@@ -402,3 +422,6 @@ if (localStorage.getItem('bx') === '1') {
 }
 
 refreshBtn.addEventListener('click', updateLeaderboard);
+
+// 调试用，上线前删掉
+window.__debug = { stats, hunt, loadProfile };
