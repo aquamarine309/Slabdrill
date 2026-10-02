@@ -10,7 +10,7 @@ const HUNT_INTERVAL_MS = 1000;              // 0 = 无冷却
 // 概率函数：0~1
 // stats = { resource, draws, hits, sinceLastHit }
 function getChance(stats) {
-  return Math.pow(10, -stats.resource - 4);
+  return Math.pow(10, -0.2 * stats.resource - 1);
 }
 
 // 奖励函数：非负整数
@@ -399,3 +399,5 @@ if (localStorage.getItem('bx') === '1') {
   setInterval(tick, 100);
   updateLeaderboard();
 }
+
+refreshBtn.addEventListener('click', updateLeaderboard);
